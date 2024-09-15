@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -53,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'foodbyte.urls'
 
@@ -135,35 +138,5 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-# Gmail SMTP server configuration
-#EMAIL_HOST = 'smtp.gmail.com'
-##EMAIL_PORT = 587  # TLS port
-#EMAIL_USE_TLS = True
+CORS_ALLOWED_ORIGINS = ['http://127.0.0.1:5500']
 
-# Gmail credentials
-#EMAIL_HOST_USER = 'foodbyte90@gmail.com'  # Replace with your Gmail address
-#EMAIL_HOST_PASSWORD = 'FOODBYTE123@r'  # Replace with your Gmail password or app password
-
-#DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-# Default from email address
-
-#REST_FRAMEWORK = {
-#    'DEFAULT_AUTHENTICATION_CLASSES': (
-#        'rest_framework_simplejwt.authentication.JWTAuthentication',
-#    ),
-#    'DEFAULT_PERMISSION_CLASSES': (
-#        'rest_framework.permissions.IsAuthenticated',
-#    ),
-#}
- 
-
-# Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
-# Outlook SMTP server settings
-EMAIL_HOST = 'smtp.office365.com'  # Outlook SMTP server
-EMAIL_PORT = 587  # SMTP port for TLS
-EMAIL_USE_TLS = True  # Use TLS encryption
-EMAIL_HOST_USER = 'foodbyte80@outlook.com'  # Your Outlook email address
-EMAIL_HOST_PASSWORD = 'foodies1234'  # Your email password or app password (if 2-Step Verification is enabled)
-DEFAULT_FROM_EMAIL = 'foodbyte80@outlook.com'  # Default 'from' address for emails
