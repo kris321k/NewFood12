@@ -11,13 +11,13 @@ class Personserializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
-    phone_number = serializers.IntegerField(required=False)
+    phonenumer = serializers.IntegerField(required=False)
     address=serializers.CharField(required=False)
 
 
     class Meta:
         model = user
-        fields = ['email', 'password', 'first_name', 'last_name', 'phone_number','address']
+        fields = ['email', 'password', 'first_name', 'last_name','phonenumer','address']
 
     def validate(self, data):
         if 'email' in data and self.instance is None:

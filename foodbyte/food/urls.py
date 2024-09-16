@@ -19,8 +19,10 @@ urlpatterns = [
     path('verifyOtp/',views.verifyOtp.as_view()),
     path('Cartaccess/<str:item_name>',views.Cartaccess.as_view()),
     path('displayCart/',views.displayCart.as_view()),
-    path('Cartaccess/',views.Cartaccess.as_view())
-
+    path('Cartaccess/',views.Cartaccess.as_view()),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('category/<str:category_name>',views.displayCategories.as_view())
 
 
 

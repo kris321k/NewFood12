@@ -10,10 +10,19 @@ from rest_framework import viewsets,filters
 from .models import Review
 import random
 from django.conf import settings
-from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
-#view for the signup
+#functions to get the token for the user
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+#view r the signup
 class submitData(APIView):
     def post(self, request):
         serialized_data = Personserializer(data=request.data)
@@ -36,14 +45,17 @@ class login(APIView):
 
         user = authenticate(request, email=email, password=password)
         if user:
-            django_login(request, user)
-            return Response({'login': 'success'}, status=status.HTTP_200_OK)
+            tokens = get_tokens_for_user(user)
+            return Response({
+                'login': 'success',
+                'access_token': tokens['access'],  # Access the correct key 'access'
+                'refresh_token': tokens['refresh']  # Access the correct key 'refresh'
+            }, status=status.HTTP_200_OK)
         else:
             return Response({
                 'login': 'failed',
                 'message': 'Invalid email or password.'
             }, status=status.HTTP_401_UNAUTHORIZED)
-        
 #view for logout
 
 
@@ -58,9 +70,10 @@ class profile(APIView):
             serialized_data.save()
             user.refresh_from_db()
             return Response({
+                'message':'profile updated succesfully',
                 'first_name': user.first_name,
                 'last_name': user.last_name,
-                'phone_number': user.phone_number,
+                'phone_number': user.phonenumer,
                 'email':user.email,
                 'address':user.address
             }, status=status.HTTP_200_OK)
@@ -79,27 +92,37 @@ class profile(APIView):
 #api for displaying front end homepage
 
 class home(APIView):
+    #permission_classes=[IsAuthenticated]
     permission_classes=[IsAuthenticated]
     
-    def get(self,request,category_name=None):
+    def get(self,request):
+        catergories=Category.objects.all()
+        catergoryserializedata=categoryserializer(catergories, many=True)
 
-        if category_name:
-            category=Category.objects.get(category_name=category_name)
-            food_items=category.food_items.all()
-            serialized_food_items = foodserializer(food_items, many=True)
-
-            return Response({
-                'food_items':serialized_food_items.data
-            })
+        #code to popular food items
+        Popularfooditems=[]
+        PopularFooditemreview=Review.objects.filter(review__gte=2)[0:3]
         
-        else:
-            popular_items=FoodItem.objects.all().order_by('-ratings')[0:5]
-            popularserialized=foodserializer(popular_items, many=True)
-            fooditemsserialized=foodserializer(FoodItem, many=True)
-            return Response({
-                'most_popular':popularserialized.data,
-                'food_items':fooditemsserialized.data
-            })
+        for eachreview in PopularFooditemreview:
+            fooditemserializeddata=foodserializer(eachreview.food_item)
+            Popularfooditems.append(fooditemserializeddata.data)
+        
+        return Response({
+            'categories':catergoryserializedata.data,
+            'popularitems':Popularfooditems
+        },status=status.HTTP_200_OK)
+    
+
+class displayCategories(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self,request,category_name):
+        category=Category.objects.filter(category_name=category_name).first()
+        Categoryfooditems=FoodItem.objects.filter(category=category)
+        Categoryfooditemsserializedata=foodserializer(Categoryfooditems, many=True)
+        return Response({
+            'categoryfooditems':Categoryfooditemsserializedata.data
+        })
+    
 
 class review(APIView):
     permission_classes=[IsAuthenticated]
@@ -121,11 +144,17 @@ class review(APIView):
     def get(self,request,item_name):
         user=request.user
         food_item=FoodItem.objects.get(item_name=item_name)
-        review=Review.objects.filter(food_item=food_item)
-        serialized_review=ReviewSerializer(review, many=True)
-        return Response({
-            'reviews':serialized_review.data,
-        })
+        if Review.objects.filter(food_item=food_item).exists():
+            review=Review.objects.filter(food_item=food_item)
+            serialized_review=ReviewSerializer(review, many=True)
+            return Response({
+                'reviews':serialized_review.data,
+            })
+        else:
+            return Response({
+                'empty':'no reviews'
+            },status=status.HTTP_404_NOT_FOUND)
+        
     
 class Reviewpatch(APIView):
 
@@ -231,8 +260,6 @@ class Cartaccess(APIView):
             'cartdata':cartserialized.data
         },status=status.HTTP_200_OK)
     
-    
-
 
     def get(self,request,item_name=None):
         user=request.user
@@ -241,7 +268,7 @@ class Cartaccess(APIView):
         if not cart.cart_items.exists():
             return Response({
                 'display':'cart empty'
-            },status=status.HTTP_404_NOT_FOUND)
+            },status=status.HTTP_200_OK)
         
         
         cartitems=cart.cart_items.all()
@@ -253,7 +280,8 @@ class Cartaccess(APIView):
         for cartitem in cartitems:
             fooditem=foodserializer(cartitem.fooditems)
             food_items_details.append({
-                'items_detailes':fooditem.data
+                'items_detailes':fooditem.data,
+                'quantity':cartitem.quantity
             })
 
         return Response({
@@ -315,15 +343,6 @@ class OrderView(APIView):
         orderserialized=orderSerializer(data=data)
         if orderserialized.is_valid():
             orderserialized.save()
-
-
-
-
-
-        
-
-
-
 
 
 
