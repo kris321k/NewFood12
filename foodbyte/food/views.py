@@ -93,7 +93,7 @@ class profile(APIView):
 
 class home(APIView):
     #permission_classes=[IsAuthenticated]
-    permission_classes=[IsAuthenticated]
+    #permission_classes=[IsAuthenticated]
     
     def get(self,request):
         catergories=Category.objects.all()
@@ -330,7 +330,7 @@ class displayCart(APIView):
             'cart_data':serialized_cart.data, 
             'food_item_data':serialized_fooditems.data
             },status=status.HTTP_200_OK)
-
+    
 
 class OrderView(APIView):
     permission_classes=[IsAuthenticated]
