@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Person,FoodItem,Category,Review,otp,Cart,CartItem,Order,OrderItem
+from .models import Person,FoodItem,Category,Review,otp,Cart,CartItem,Restaurent
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 
@@ -12,12 +12,17 @@ class Personserializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
     phonenumer = serializers.IntegerField(required=False)
-    address=serializers.CharField(required=False)
+    address = serializers.CharField(required=False)
+    
+
+
+
 
 
     class Meta:
         model = user
-        fields = ['email', 'password', 'first_name', 'last_name','phonenumer','address']
+        fields = ['email', 'password', 'first_name', 'last_name','phonenumer','address','isOwner']
+
 
     def validate(self, data):
         if 'email' in data and self.instance is None:
@@ -71,16 +76,30 @@ class CartItemserializer(serializers.ModelSerializer):
         fields=['cart','fooditems','quantity']
         
 
-class orderSerializer(serializers.ModelSerializer):
-    created_at=serializers.CharField(required=False)
-    status=serializers.CharField(required=False)
-    class Meta:
-        model=Order
-        fields=['person','created_at','status']
 
 
-class orderitemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model=OrderItem
-        fields=['order','fooditem','quantity']
+
+class RestaurentSerializer(serializers.ModelSerializer) :
+    class Meta :
+        model = Restaurent
+        fields = '__all__'
+        
+    def validate(self, data):
+        
+        if Restaurent.objects.filter(Rname = data['Rname']).exists() :
+            raise serializers.ValidationError("Restaurent name already exists")
+        
+        if Restaurent.objects.filter(RContactNumber = int(data['RcontactNumber'])).exists() :
+            raise serializers.ValidationError("number is registerd with the restaurent")
+        
+
+        return data
     
+
+
+
+
+
+
+
+

@@ -22,7 +22,13 @@ urlpatterns = [
     path('Cartaccess/',views.Cartaccess.as_view()),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('category/<str:category_name>',views.displayCategories.as_view())
+    path('category/<str:category_name>',views.displayCategories.as_view()),
+    path('rSignUp/', views.AdminSignUp.as_view()),
+    path('rLogin/',views.AdminLogin.as_view()),
+    path('rest/',views.Rest.as_view())
+    
+
+
 
 
 

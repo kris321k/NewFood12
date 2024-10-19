@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from .manager import UserManger
+import random
 
 class Person(AbstractUser):
     username = None
@@ -8,10 +9,10 @@ class Person(AbstractUser):
     bio = models.CharField(max_length=40, blank=True, null=True)
     phonenumer=models.IntegerField(default=0000)
     address=models.TextField(max_length=200)
-
+    isOwner = models.BooleanField(default=False)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-    
+
     objects = UserManger()
 
 
@@ -49,26 +50,12 @@ class CartItem(models.Model):
     quantity=models.IntegerField(default=0)
 
 
-class Order(models.Model):
-    person=models.ForeignKey(Person,on_delete=models.CASCADE,related_name='ordereditems')
-    created_at=models.DateTimeField(auto_now_add=True)
-    status=models.CharField(max_length=200,default='pending')
-
-
-class OrderItem(models.Model):
-    
-    order=models.ForeignKey(Order,on_delete=models.CASCADE,related_name='items')
-    fooditem=models.ForeignKey(FoodItem,on_delete=models.CASCADE)
-    quantity=models.IntegerField(default=0)
-
-
-
 class Review(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='person_reviews')
     food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE, related_name='reviews')
-    review_text = models.TextField(max_length=500)  
+    review_text = models.TextField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)  
+    updated_at = models.DateTimeField(auto_now=True)
     is_paid=models.BooleanField(default=False)
     review=models.IntegerField()
 
@@ -82,3 +69,64 @@ class otp(models.Model):
     otp_number=models.CharField(max_length=4)
     otp_created=models.DateTimeField(auto_now_add=True)
 
+
+
+
+
+class Restaurent(models.Model) :
+    Rname = models.CharField(max_length=50)
+    Rimg = models.ImageField(upload_to='images/')
+    Rdesc = models.CharField(max_length=100)
+    Fooditems = models.ManyToManyField(FoodItem)
+    address = models.CharField(max_length=150)
+    Radmin = models.OneToOneField(Person, on_delete = models.CASCADE)
+    RcontactNumber = models.IntegerField() 
+
+
+class order(models.Model) :
+    Res = models.ForeignKey(Restaurent, on_delete=models.CASCADE)
+    User = models.ForeignKey(Person, on_delete=models.CASCADE)
+    fooditem = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
+    status = models.CharField(max_length=100, default='pending')
+    Ispayment = models.BooleanField(default=False)
+    OrderId = models.CharField(max_length=100)
+
+
+
+
+class AditionalFoodItems(models.Model) :
+    order = models.OneToOneField(order, on_delete=models.CASCADE)
+    Additems = models.ManyToManyField(FoodItem)
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    

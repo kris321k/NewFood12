@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .models import Person, Category,Order,FoodItem,otp,Cart,CartItem,OrderItem
+from .models import Person, Category,FoodItem,otp,Cart,CartItem,Restaurent
 from rest_framework.views import APIView
-from .serializers import Personserializer,categoryserializer,foodserializer,ReviewSerializer,otpserializer,CartSerializer,CartItemserializer,orderSerializer,orderitemSerializer
+from .serializers import Personserializer,categoryserializer,foodserializer,ReviewSerializer,otpserializer,CartSerializer,CartItemserializer,RestaurentSerializer
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login as django_login
 from rest_framework import status
@@ -11,6 +11,10 @@ from .models import Review
 import random
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny
+from django.core.mail import send_mail
+
+
 
 
 #functions to get the token for the user
@@ -27,11 +31,12 @@ class submitData(APIView):
     def post(self, request):
         serialized_data = Personserializer(data=request.data)
         if serialized_data.is_valid():
+
             serialized_data.save()
             return Response({'registration': 'success'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serialized_data.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        
 #view for the login
 class login(APIView):
     def post(self, request):
@@ -77,10 +82,10 @@ class profile(APIView):
                 'email':user.email,
                 'address':user.address
             }, status=status.HTTP_200_OK)
-        
+
         else:
             return Response(serialized_data.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
     def get(self,request):
         user=request.user
         serialiazeddata=Personserializer(user)
@@ -88,33 +93,36 @@ class profile(APIView):
         return Response({
             'data':serialiazeddata.data
         },status=status.HTTP_200_OK)
-    
+
 #api for displaying front end homepage
 
 class home(APIView):
-    #permission_classes=[IsAuthenticated]
-    #permission_classes=[IsAuthenticated]
-    
+
+    permission_classes = [AllowAny]
+
+
+
     def get(self,request):
         catergories=Category.objects.all()
         catergoryserializedata=categoryserializer(catergories, many=True)
 
         #code to popular food items
         Popularfooditems=[]
-        PopularFooditemreview=Review.objects.filter(review__gte=2)[0:3]
-        
-        for eachreview in PopularFooditemreview:
-            fooditemserializeddata=foodserializer(eachreview.food_item)
-            Popularfooditems.append(fooditemserializeddata.data)
-        
+        fooditems=FoodItem.objects.all()
+
+        for fooditem in fooditems:
+            fooditemserialized=foodserializer(fooditem)
+            Popularfooditems.append(fooditemserialized.data)
+
+
         return Response({
             'categories':catergoryserializedata.data,
             'popularitems':Popularfooditems
         },status=status.HTTP_200_OK)
-    
+
 
 class displayCategories(APIView):
-    permission_classes=[IsAuthenticated]
+    #permission_classes=[IsAuthenticated]
     def get(self,request,category_name):
         category=Category.objects.filter(category_name=category_name).first()
         Categoryfooditems=FoodItem.objects.filter(category=category)
@@ -122,7 +130,7 @@ class displayCategories(APIView):
         return Response({
             'categoryfooditems':Categoryfooditemsserializedata.data
         })
-    
+
 
 class review(APIView):
     permission_classes=[IsAuthenticated]
@@ -139,7 +147,7 @@ class review(APIView):
             return Response({
                 'data_submission':'success'
             })
-        
+
 
     def get(self,request,item_name):
         user=request.user
@@ -154,8 +162,8 @@ class review(APIView):
             return Response({
                 'empty':'no reviews'
             },status=status.HTTP_404_NOT_FOUND)
-        
-    
+
+
 class Reviewpatch(APIView):
 
     def patch(self,request,item_name,review_id):
@@ -168,8 +176,8 @@ class Reviewpatch(APIView):
             return Response({
                 'success':'updated successfully'
             }, status=status.HTTP_200_OK)
-        
-        
+
+
 
 class ForgotPassword(APIView):
     def post(self,request):
@@ -183,27 +191,25 @@ class ForgotPassword(APIView):
                 'otp': opt_num.otp_number
             })
 
-            #subject = 'otp'
-            #message = f'Your OTP code for password reset is: {opt_num.otp_number}'
-            #from_email = settings.DEFAULT_FROM_EMAIL
-            #recipient_list = [email]
-
-            
-            #send_mail(subject, message, from_email, recipient_list)
+            subject = 'otp'
+            message = f'Your OTP code for password reset is: {opt_num.otp_number}'
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [email]
 
 
-            
-            # Set the email in the cookie
-            response.set_cookie(
-                'email',
-                email,
-                httponly=True,  
-                secure=True     
-            )
-            return response
+            send_mail(subject, message, from_email, recipient_list)
+            return Response({
+                'success':'otp sent'
+            },status=status.HTTP_200_OK)
+
         else:
-            return Response({'error': 'Email does not exist'}, status=404)
-    
+            return Response({
+                'failure':'person does not exist'
+            },status=status.HTTP_404_NOT_FOUND)
+
+
+
+
 class verifyOtp(APIView):
     def post(self,request):
         email=request.COOKIES['email']
@@ -219,7 +225,7 @@ class verifyOtp(APIView):
                 return Response({
                     'false':'invalid otp'
                 },status=status.HTTP_401_UNAUTHORIZED)
-            
+
 
 
 class Cartaccess(APIView):
@@ -228,19 +234,19 @@ class Cartaccess(APIView):
     def post(self,request,item_name):
         user=request.user
         #cart, created=Cart.objects.get_or_create(person=user,defaults={'quantity':0,'total_price':0})
-        
+
 
         fooditem=FoodItem.objects.filter(item_name=item_name).first()
         if not fooditem:
             return Response({
                 'failed':'true'
             },status=status.HTTP_400_BAD_REQUEST)
-        
+
         cart, created=Cart.objects.get_or_create(person=user)
-       
-        
+
+
         cartitem, created1=CartItem.objects.get_or_create(cart=cart,fooditems=fooditem)
-        
+
         cartitem.quantity+=1
         cartitem.save()
         cartItems=cart.cart_items.all()
@@ -259,7 +265,7 @@ class Cartaccess(APIView):
             'cartitems':cartitemserialized.data,
             'cartdata':cartserialized.data
         },status=status.HTTP_200_OK)
-    
+
 
     def get(self,request,item_name=None):
         user=request.user
@@ -269,8 +275,8 @@ class Cartaccess(APIView):
             return Response({
                 'display':'cart empty'
             },status=status.HTTP_200_OK)
-        
-        
+
+
         cartitems=cart.cart_items.all()
         cartitemsserialized=CartItemserializer(cartitems, many=True)
         cartserializeddata=CartSerializer(cart)
@@ -284,12 +290,16 @@ class Cartaccess(APIView):
                 'quantity':cartitem.quantity
             })
 
+
+        new_food_items_details=food_items_details[::-1]
+
+
         return Response({
             'cart_items':cartitemsserialized.data,
-            'fooditems':food_items_details,
+            'fooditems':new_food_items_details,
             'cart_details':cartserializeddata.data
         },status=status.HTTP_200_OK)
-    
+
 
     def delete(self,request,item_name):
         user=request.user
@@ -312,7 +322,7 @@ class Cartaccess(APIView):
         return Response({
             'success':'item deleted successfully'
         },status=status.HTTP_200_OK)
-    
+
 
 class displayCart(APIView):
     permission_classes=[IsAuthenticated]
@@ -324,78 +334,204 @@ class displayCart(APIView):
                 'error':'cart not found with person'
             },status=status.HTTP_404_NOT_FOUND)
         serialized_cart=CartSerializer(cart)
- 
+
         serialized_fooditems=foodserializer(cart.items.all(), many=True)
         return Response({
-            'cart_data':serialized_cart.data, 
+            'cart_data':serialized_cart.data,
             'food_item_data':serialized_fooditems.data
             },status=status.HTTP_200_OK)
+
+
+
+
+class Search(APIView):
     
 
-class OrderView(APIView):
-    permission_classes=[IsAuthenticated]
+    def post(self,request):
+        
+        searchQuery=request.data['searchQuery']
+        Searchedfooditems=FoodItem.objects.filter(item_name__icontains=searchQuery)
+        Searchedfooditemsserialized=foodserializer(Searchedfooditems, many=True)
+        return Response({
+            'search_results':Searchedfooditemsserialized.data
+        },status=status.HTTP_200_OK)
 
-    def post(self,request,item_name):
-        user=request.user
+
+class DisplayFooditems(APIView):
+
+    def get(self,request,item_name):
+
         fooditem=FoodItem.objects.filter(item_name=item_name).first()
-        data=request.data.copy()
-        data['person']=user.id
-        orderserialized=orderSerializer(data=data)
-        if orderserialized.is_valid():
-            orderserialized.save()
+        fooditemserialized=foodserializer(fooditem)
+        return Response({
+            'success':True,
+            'itemData':fooditemserialized.data
+            },status=status.HTTP_200_OK)
 
 
 
+class AdminLogin(APIView) :
 
+    def post(self,request) :
+        
+        email = request.data['email']
+        password = request.data['password']
 
-
-
-
-
-    
-
-
-
-
-
-
+        if not email and not password :
+            return Response({
+                'error':'password error'
+            },status=status.HTTP_401_UNAUTHORIZED)
         
         
-
-
-
+        user = authenticate(request, email = email, password = password)
+        
+        if user and user.isOwner == True :
+            tokens = get_tokens_for_user(user)
+            return Response({
+                'access_token': tokens['access'],
+                'refresh_token': tokens['refresh']
+                
+            }, status=status.HTTP_200_OK)
+        
+        
+        if user and user.isOwner == False :
+            return Response({
+                'failure':'user authenticated but he is only the customer'
+            })
         
 
 
 
+class AdminSignUp(APIView) :
+
+    def post(self, request) :
+
+        AdminLoginSerializedData = Personserializer(data = request.data)
+
+        if AdminLoginSerializedData.is_valid() :
+            AdminLoginSerializedData.IsOwner = True
+            AdminLoginSerializedData.save()
+
+            return Response({
+                'success' : 'True'
+            }, status = status.HTTP_200_OK)
         
+        
+        else :
+            return Response({
+                'failure' : 'True'
+            }, status = status.HTTP_400_BAD_REQUEST)
 
 
+
+class Rest(APIView) :
+    permission_classes = [IsAuthenticated]
+    def post(self, request) :
+
+        user = request.user
+        if user and user.isOwner == True :
+            Rimg = request.data['img']
+            Rname = request.data['Rname']
+            Rdesc = request.data['Rdesc']
+            address = request.data['address']
+            RcontactNumber = request.data['RcontactNumber']
+
+
+            if Restaurent.objects.filter(Radmin = user).exists():
+                return Response({
+                    'failure':'True'
+                },status=status.HTTP_400_BAD_REQUEST)
             
+
+            Robj = Restaurent.objects.create(Radmin = user, Rimg = Rimg, Rname =Rname, Rdesc = Rdesc, address = address, RcontactNumber = RcontactNumber)
+
+
+            return Response({
+                'success':'True'
+            }, status = status.HTTP_200_OK)
         
+
+    def get(self, request) :
+
+        Restaurents = Restaurent.objects.all()
+        SerializedData = RestaurentSerializer(Restaurents, many = True)
+
+        return Response({
+            'data':SerializedData.data
+        })
+    
+
+class AddtoRest(APIView) :
+    permission_classes = [IsAuthenticated]
+
+    
+    def post(self, request, item_name) :
+
+        user = request.user
+        fooditem = FoodItem.objects.filter(item_name = item_name).first()
+        Res = Restaurent.objects.filter(Radmin = user).first()
+
+        if fooditem and Res :
+            Res.Fooditems.add(fooditem)
+            return Response({
+                'success' : 'food item succesfully addded'
+            }, status = status.HTTP_200_OK)
+
+
+
+
+
 
 
 
     
-            
-        
-        
-
-
-
-
-        
-        
-
-            
-        
-
-    
 
 
 
 
 
 
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
