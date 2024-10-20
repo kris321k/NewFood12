@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Person,FoodItem,Category,Review,otp,Cart,CartItem,Restaurent
+from .models import Person,FoodItem,Category,Review,otp,Cart,CartItem,Restaurent,order
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 
@@ -56,9 +56,10 @@ class foodserializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+ 
     class Meta:
         model=Review
-        fields=['person','food_item','review_text','created_at','updated_at','is_paid','review']
+        fields=['person','food_item','review_text']
     
 class otpserializer(serializers.ModelSerializer):
     class Meta:
@@ -96,7 +97,12 @@ class RestaurentSerializer(serializers.ModelSerializer) :
         return data
     
 
+class OrderSerializer(serializers.ModelSerializer) :
+    status = serializers.CharField(required = False)
 
+    class Meta :
+        model = order
+        fields = '__all__'
 
 
 

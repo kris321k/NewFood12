@@ -12,7 +12,7 @@ urlpatterns = [
     path('home/',views.home.as_view()),
     path('home/<str:category_name>',views.home.as_view()),
     path('review/<str:item_name>/', views.review.as_view(), name='add_review'),
-    path('review/<str:item_name>/<int:review_id>/',views.Reviewpatch.as_view()),
+    #path('review/<str:item_name>/<int:review_id>/',views.Reviewpatch.as_view()),
     path('ForgotPassword/',views.ForgotPassword.as_view()),
     #path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     #path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -25,10 +25,10 @@ urlpatterns = [
     path('category/<str:category_name>',views.displayCategories.as_view()),
     path('rSignUp/', views.AdminSignUp.as_view()),
     path('rLogin/',views.AdminLogin.as_view()),
-    path('rest/',views.Rest.as_view())
-    
-
-
+    path('rest/',views.Rest.as_view()),
+    path('placeOrder/',views.OrderView.as_view()),
+    path('AddRes/<str:item_name>',views.AddtoRest.as_view()),
+    path('Rest/',views.Rest.as_view())
 
 
 

@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -147,4 +147,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     ),
+}
+
+
+STRIPE_TEST_SECRET_KEY  = 'sk_test_51QBtRYF87qD0X6KYwJDadsIrNyKB8ySX5oSd5XdHe5Lc8YyV3K0RyvInQKgd8TbDWkG7Nf6cKFZcVSFyZWwxuvrW00ytal2zN3'
+
+STRIPE_TEST_PUBLISHABLE_KEY = 'pk_test_51QBtRYF87qD0X6KYrK5fnbYAB3qyAsmZr6uzkiyzscnb0zloE2zwmYaAV7tdJvLgBFfOfeJKtbOnOb5Axx1cKeLF00baaNr6Cq'
+
+JWT_AUTH = {
+    'JWT_EXPIRATION_DELTA': timedelta(minutes=60),
 }

@@ -54,13 +54,9 @@ class Review(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='person_reviews')
     food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE, related_name='reviews')
     review_text = models.TextField(max_length=500)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    is_paid=models.BooleanField(default=False)
-    review=models.IntegerField()
+    
 
-    def __str__(self):
-        return f"Review by {self.person.email} on {self.food_item.item_name}"
+
 
 
 class otp(models.Model):

@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from .models import Person, Category,FoodItem,otp,Cart,CartItem,Restaurent
+from .models import Person, Category,FoodItem,otp,Cart,CartItem,Restaurent,order
 from rest_framework.views import APIView
-from .serializers import Personserializer,categoryserializer,foodserializer,ReviewSerializer,otpserializer,CartSerializer,CartItemserializer,RestaurentSerializer
+from .serializers import Personserializer,categoryserializer,foodserializer,ReviewSerializer,otpserializer,CartSerializer,CartItemserializer,RestaurentSerializer,OrderSerializer
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login as django_login
 from rest_framework import status
@@ -13,6 +13,10 @@ from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
+import stripe
+
+
+stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
 
 
 
@@ -136,17 +140,22 @@ class review(APIView):
     permission_classes=[IsAuthenticated]
 
     def post(self,request,item_name):
-        User=request.user
-        food_item=FoodItem.objects.get(item_name=item_name)
-        data=request.data.copy()
-        data['food_item']=food_item.id
-        data['person']=User.id
-        serialized_review=ReviewSerializer(data=data)
-        if serialized_review.is_valid():
-            serialized_review.save()
+        try:
+            user = request.user
+            food_item = FoodItem.objects.filter(item_name = item_name).first()
+            review_text = request.data['review_text']
+
+            reviewObj = Review(person = user, food_item = food_item, review_text = review_text)
+            reviewObj.save()
             return Response({
-                'data_submission':'success'
-            })
+                'status':'success'
+            },status = status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({
+                'error':e
+            } )
+        
 
 
     def get(self,request,item_name):
@@ -154,15 +163,12 @@ class review(APIView):
         food_item=FoodItem.objects.get(item_name=item_name)
         if Review.objects.filter(food_item=food_item).exists():
             review=Review.objects.filter(food_item=food_item)
-            serialized_review=ReviewSerializer(review, many=True)
+            ReviewData = []
+            for Data in review:
+                ReviewData.append([Data.review_text, Data.person.email])
             return Response({
-                'reviews':serialized_review.data,
+                'data':ReviewData
             })
-        else:
-            return Response({
-                'empty':'no reviews'
-            },status=status.HTTP_404_NOT_FOUND)
-
 
 class Reviewpatch(APIView):
 
@@ -361,11 +367,14 @@ class DisplayFooditems(APIView):
 
     def get(self,request,item_name):
 
-        fooditem=FoodItem.objects.filter(item_name=item_name).first()
-        fooditemserialized=foodserializer(fooditem)
+        fooditem = FoodItem.objects.filter(item_name=item_name).first()
+        Res = Restaurent.objects.filter(fooditem = fooditem)
+        ResSerializedData = RestaurentSerializer(Res, many = True) 
+        fooditemserialized = foodserializer(fooditem)
         return Response({
             'success':True,
-            'itemData':fooditemserialized.data
+            'itemData':fooditemserialized.data,
+            'Restaurents':ResSerializedData.data
             },status=status.HTTP_200_OK)
 
 
@@ -425,7 +434,7 @@ class AdminSignUp(APIView) :
 
 
 class Rest(APIView) :
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
     def post(self, request) :
 
         user = request.user
@@ -458,7 +467,8 @@ class Rest(APIView) :
 
         return Response({
             'data':SerializedData.data
-        })
+        },statu = status.HTTP_200_OK)
+    
     
 
 class AddtoRest(APIView) :
@@ -476,6 +486,69 @@ class AddtoRest(APIView) :
             return Response({
                 'success' : 'food item succesfully addded'
             }, status = status.HTTP_200_OK)
+        
+        else :
+            return Response({
+                'failure':'True'
+            },status = status.HTTP_200_OK)
+        
+
+
+
+class OrderView(APIView) :
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request) :
+        user = request.user
+        Rname = request.data['Rname']
+        item_name = request.data['item_name']
+        additional = request.data['additional']
+
+        additionalFooditemslist = []
+  
+        if additional:       
+
+            for ItemName in additional :
+                addItem = FoodItem.objects.filter(item_name = ItemName).first()
+                additionalFooditemslist.append(addItem)
+
+        
+        Res = Restaurent.objects.filter(Rname = Rname).first()
+        fooditem = FoodItem.objects.filter(item_name = item_name).first()
+
+        
+    
+
+        payementSum = int(fooditem.item_price)
+
+        if additional:
+            for items in additionalFooditemslist :
+                payementSum += int(items.item_price)
+
+
+        currency = 'usd'
+
+        intent = stripe.PaymentIntent.create(
+            amount = payementSum,
+            currency = currency,
+            payment_method_types = ['card'],
+            metadata = {
+                'email' : user.email,
+                'Resid' : Res.id
+            }
+        )
+
+        return Response({
+            'client_secret' : intent['client_secret'],
+            'Payment' : payementSum
+        },status=status.HTTP_200_OK)
+
+
+
+
+
+        
 
 
 
