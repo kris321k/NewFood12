@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import Person, Category,FoodItem,otp,Cart,CartItem,Restaurent,order
+from .models import Person, Category,FoodItem,otp,Cart,CartItem,Restaurent,order,AditionalFoodItems
 from rest_framework.views import APIView
 from .serializers import Personserializer,categoryserializer,foodserializer,ReviewSerializer,otpserializer,CartSerializer,CartItemserializer,RestaurentSerializer,OrderSerializer
 from rest_framework.response import Response
@@ -510,6 +510,35 @@ class AddtoRest(APIView) :
                 'failure':'True'
             },status = status.HTTP_200_OK)
         
+class DisplayUserOrder(APIView) :
+    
+    permission_classes = [IsAuthenticated]
+    def get(self,request) :
+        user = request.user
+        OrderItems = order.objects.filter(User = user)
+        if OrderItems.exists() :
+            additionalitemList = []
+            OrderItemsSerialized = OrderSerializer(OrderItems, many = True)
+
+            for Orders in OrderItems:
+                additionalItem = AditionalFoodItems.objects.filter(Order = Orders).first()
+                Faddfooditems = additionalItem.Additems.all()
+
+                for Id in Faddfooditems :
+                    fooditem = FoodItem.objects.filter(id =Id).first()
+                    additionalitemList.append(fooditem)
+
+            return Response({
+                'additionalitemlist':additionalitemList
+            },status = status.HTTP_200_OK)
+        
+        else :
+            return Response({
+                'failed':'order does not exist for this person'
+            }, status = status.HTTP_404_NOT_FOUND)
+        
+
+
 
 
 
