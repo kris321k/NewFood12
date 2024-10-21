@@ -520,12 +520,10 @@ class DisplayUserOrder(APIView) :
 
             MainData = []
             
-
             for Orders in OrderItems:
                 fooditem = Orders.fooditem.id
                 fooditemData = FoodItem.objects.filter(id = fooditem).first()
                 FoodItemSerializeData = foodserializer(fooditemData)
-                # code for retrieving additional data
                 additionalItem = AditionalFoodItems.objects.filter(order = Orders).first()
                 OrderSerializedData = OrderSerializer(Orders)
                 AddFoodItem = additionalItem.Additems.all()
