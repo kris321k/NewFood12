@@ -98,7 +98,7 @@ class RestaurentSerializer(serializers.ModelSerializer) :
     
 
 class OrderSerializer(serializers.ModelSerializer) :
-    status = serializers.CharField(required = False)
+   # status = serializers.CharField(required = False)
 
     class Meta :
         model = order

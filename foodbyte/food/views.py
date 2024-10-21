@@ -517,21 +517,36 @@ class DisplayUserOrder(APIView) :
         user = request.user
         OrderItems = order.objects.filter(User = user)
         if OrderItems.exists() :
-            additionalitemList = []
-            OrderItemsSerialized = OrderSerializer(OrderItems, many = True)
+
+            MainData = []
+            
 
             for Orders in OrderItems:
-                additionalItem = AditionalFoodItems.objects.filter(Order = Orders).first()
-                Faddfooditems = additionalItem.Additems.all()
-
-                for Id in Faddfooditems :
-                    fooditem = FoodItem.objects.filter(id =Id).first()
-                    additionalitemList.append(fooditem)
+                fooditem = Orders.fooditem.id
+                fooditemData = FoodItem.objects.filter(id = fooditem).first()
+                FoodItemSerializeData = foodserializer(fooditemData)
+                # code for retrieving additional data
+                additionalItem = AditionalFoodItems.objects.filter(order = Orders).first()
+                OrderSerializedData = OrderSerializer(Orders)
+                AddFoodItem = additionalItem.Additems.all()
+                data = []
+                for Add in AddFoodItem :
+                    
+                    #Add = FoodItem.objects.filter(id = Id).first()
+                    AddFoodItemSerialized = foodserializer(Add)
+                    data.append(AddFoodItemSerialized.data)
+                
+                MainData.append({
+                    'OrderData':OrderSerializedData.data,
+                    'FoodItem':FoodItemSerializeData.data,
+                    'AdditionalItemsData':data
+                })
 
             return Response({
-                'additionalitemlist':additionalitemList
-            },status = status.HTTP_200_OK)
-        
+                    'data':MainData
+                })
+            
+
         else :
             return Response({
                 'failed':'order does not exist for this person'
@@ -543,6 +558,7 @@ class DisplayUserOrder(APIView) :
 
 
 class OrderView(APIView) :
+
 
     permission_classes = [IsAuthenticated]
 
