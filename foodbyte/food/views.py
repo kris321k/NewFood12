@@ -169,6 +169,12 @@ class review(APIView):
             return Response({
                 'data':ReviewData
             })
+        
+        else :
+            return Response({
+                'not exists':True
+            }, status = status.HTTP_404_NOT_FOUND)
+        
 
 class Reviewpatch(APIView):
 
@@ -368,16 +374,28 @@ class DisplayFooditems(APIView):
     def get(self,request,item_name):
 
         fooditem = FoodItem.objects.filter(item_name=item_name).first()
-        Res = Restaurent.objects.filter(fooditem = fooditem)
-        ResSerializedData = RestaurentSerializer(Res, many = True) 
+        Res = Restaurent.objects.filter(Fooditems = fooditem)
+        if Res.exists() :
+            ResSerializedData = RestaurentSerializer(Res, many = True) 
+
         fooditemserialized = foodserializer(fooditem)
+        RestD=[]
+
+        for Data in ResSerializedData.data :
+            Rname = Data['Rname']
+            Radmin = Data['Radmin']
+            Remail = Person.objects.filter(id = Radmin).first()
+            RestD.append([Rname, Remail.email])
+
+            
         return Response({
             'success':True,
             'itemData':fooditemserialized.data,
-            'Restaurents':ResSerializedData.data
+            'Restaurents':ResSerializedData.data,
+            'data':RestD
             },status=status.HTTP_200_OK)
 
-
+ 
 
 class AdminLogin(APIView) :
 
