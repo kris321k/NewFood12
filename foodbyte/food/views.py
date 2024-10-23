@@ -40,7 +40,7 @@ class submitData(APIView):
             return Response({'registration': 'success'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serialized_data.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
 #view for the login
 class login(APIView):
     def post(self, request):
@@ -150,12 +150,12 @@ class review(APIView):
             return Response({
                 'status':'success'
             },status = status.HTTP_200_OK)
-        
+
         except Exception as e:
             return Response({
                 'error':e
             } )
-        
+
 
 
     def get(self,request,item_name):
@@ -165,16 +165,21 @@ class review(APIView):
             review=Review.objects.filter(food_item=food_item)
             ReviewData = []
             for Data in review:
-                ReviewData.append([Data.review_text, Data.person.email])
+                ReviewData.append({
+                    'review_text':Data.review_text,
+                    'email':Data.person.email
+                })
             return Response({
                 'data':ReviewData
             })
-        
+
         else :
             return Response({
                 'not exists':True
             }, status = status.HTTP_404_NOT_FOUND)
-        
+
+
+
 
 class Reviewpatch(APIView):
 
@@ -357,10 +362,10 @@ class displayCart(APIView):
 
 
 class Search(APIView):
-    
+
 
     def post(self,request):
-        
+
         searchQuery=request.data['searchQuery']
         Searchedfooditems=FoodItem.objects.filter(item_name__icontains=searchQuery)
         Searchedfooditemsserialized=foodserializer(Searchedfooditems, many=True)
@@ -371,36 +376,23 @@ class Search(APIView):
 
 class DisplayFooditems(APIView):
 
+
     def get(self,request,item_name):
 
         fooditem = FoodItem.objects.filter(item_name=item_name).first()
         Res = Restaurent.objects.filter(Fooditems = fooditem)
         if Res.exists() :
-            ResSerializedData = RestaurentSerializer(Res, many = True) 
-
-        fooditemserialized = foodserializer(fooditem)
-        RestD=[]
-
-        for Data in ResSerializedData.data :
-            Rname = Data['Rname']
-            Radmin = Data['Radmin']
-            Remail = Person.objects.filter(id = Radmin).first()
-            RestD.append([Rname, Remail.email])
-
-            
+            ResSerializedData = RestaurentSerializer(Res, many = True)
         return Response({
-            'success':True,
-            'itemData':fooditemserialized.data,
             'Restaurents':ResSerializedData.data,
-            'data':RestD
             },status=status.HTTP_200_OK)
 
- 
+
 
 class AdminLogin(APIView) :
 
     def post(self,request) :
-        
+
         email = request.data['email']
         password = request.data['password']
 
@@ -408,24 +400,24 @@ class AdminLogin(APIView) :
             return Response({
                 'error':'password error'
             },status=status.HTTP_401_UNAUTHORIZED)
-        
-        
+
+
         user = authenticate(request, email = email, password = password)
-        
+
         if user and user.isOwner == True :
             tokens = get_tokens_for_user(user)
             return Response({
                 'access_token': tokens['access'],
                 'refresh_token': tokens['refresh']
-                
+
             }, status=status.HTTP_200_OK)
-        
-        
+
+
         if user and user.isOwner == False :
             return Response({
                 'failure':'user authenticated but he is only the customer'
             })
-        
+
 
 
 
@@ -442,8 +434,8 @@ class AdminSignUp(APIView) :
             return Response({
                 'success' : 'True'
             }, status = status.HTTP_200_OK)
-        
-        
+
+
         else :
             return Response({
                 'failure' : 'True'
@@ -468,7 +460,7 @@ class Rest(APIView) :
                 return Response({
                     'failure':'True'
                 },status=status.HTTP_400_BAD_REQUEST)
-            
+
 
             Robj = Restaurent.objects.create(Radmin = user, Rimg = Rimg, Rname =Rname, Rdesc = Rdesc, address = address, RcontactNumber = RcontactNumber)
 
@@ -476,7 +468,7 @@ class Rest(APIView) :
             return Response({
                 'success':'True'
             }, status = status.HTTP_200_OK)
-        
+
 
     def get(self, request) :
 
@@ -486,13 +478,13 @@ class Rest(APIView) :
         return Response({
             'data':SerializedData.data
         },statu = status.HTTP_200_OK)
-    
-    
+
+
 
 class AddtoRest(APIView) :
     permission_classes = [IsAuthenticated]
 
-    
+
     def post(self, request, item_name) :
 
         user = request.user
@@ -504,14 +496,14 @@ class AddtoRest(APIView) :
             return Response({
                 'success' : 'food item succesfully addded'
             }, status = status.HTTP_200_OK)
-        
+
         else :
             return Response({
                 'failure':'True'
             },status = status.HTTP_200_OK)
-        
+
 class DisplayUserOrder(APIView) :
-    
+
     permission_classes = [IsAuthenticated]
     def get(self,request) :
         user = request.user
@@ -519,7 +511,7 @@ class DisplayUserOrder(APIView) :
         if OrderItems.exists() :
 
             MainData = []
-            
+
             for Orders in OrderItems:
                 fooditem = Orders.fooditem.id
                 fooditemData = FoodItem.objects.filter(id = fooditem).first()
@@ -529,11 +521,11 @@ class DisplayUserOrder(APIView) :
                 AddFoodItem = additionalItem.Additems.all()
                 data = []
                 for Add in AddFoodItem :
-                    
+
                     #Add = FoodItem.objects.filter(id = Id).first()
                     AddFoodItemSerialized = foodserializer(Add)
                     data.append(AddFoodItemSerialized.data)
-                
+
                 MainData.append({
                     'OrderData':OrderSerializedData.data,
                     'FoodItem':FoodItemSerializeData.data,
@@ -543,13 +535,13 @@ class DisplayUserOrder(APIView) :
             return Response({
                     'data':MainData
                 })
-            
+
 
         else :
             return Response({
                 'failed':'order does not exist for this person'
             }, status = status.HTTP_404_NOT_FOUND)
-        
+
 
 
 
@@ -567,19 +559,19 @@ class OrderView(APIView) :
         additional = request.data['additional']
 
         additionalFooditemslist = []
-  
-        if additional:       
+
+        if additional:
 
             for ItemName in additional :
                 addItem = FoodItem.objects.filter(item_name = ItemName).first()
                 additionalFooditemslist.append(addItem)
 
-        
+
         Res = Restaurent.objects.filter(Rname = Rname).first()
         fooditem = FoodItem.objects.filter(item_name = item_name).first()
 
-        
-    
+
+
 
         payementSum = int(fooditem.item_price)
 
@@ -597,47 +589,53 @@ class OrderView(APIView) :
             metadata = {
                 'email' : user.email,
                 'Resid' : Res.id
+
             }
         )
 
         return Response({
             'client_secret' : intent['client_secret'],
-            'Payment' : payementSum
+            'Payment' : str(payementSum)
         },status=status.HTTP_200_OK)
 
 
 
 
+class OrderOverview(APIView):
+    def get(self, request, item_name) :
+        fooditem = FoodItem.objects.filter(item_name = item_name).first()
+        Res = Restaurent.objects.filter(Fooditems = fooditem )
 
-        
+        Tfooditems = FoodItem.objects.all()
 
+        count = 0
 
+        for i in Tfooditems:
+            count += 1
 
+        Tdata = []
 
+        seen_items = set()
 
+        for i in range(0,5) :
+            index = random.randint(0,count-1)
+            seen_food_item = Tfooditems[index].item_name
 
+            if seen_food_item not in seen_items :
+                seen_items.add(seen_food_item)
+                Tdata.append(Tfooditems[index])
 
+        newTdata = []
 
-    
+        for Data in Tdata :
+            serializedData = foodserializer(Data)
+            newTdata.append(serializedData.data)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return Response({
+            'fooditem':foodserializer(fooditem).data,
+            'Res':RestaurentSerializer(Res, many = True).data,
+            'additems':newTdata
+        }, status = status.HTTP_200_OK)
 
 
 

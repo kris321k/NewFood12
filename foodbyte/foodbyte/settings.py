@@ -26,7 +26,8 @@ SECRET_KEY = 'django-insecure-1-sti6-*9$lr07eiw!u$=v&(*(z7j=vrf7*!@og)%s$&^j44uf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["foodbytes.pythonanywhere.com"]
+
 
 
 # Application definition
@@ -154,6 +155,12 @@ STRIPE_TEST_SECRET_KEY  = 'sk_test_51QBtRYF87qD0X6KYwJDadsIrNyKB8ySX5oSd5XdHe5Lc
 
 STRIPE_TEST_PUBLISHABLE_KEY = 'pk_test_51QBtRYF87qD0X6KYrK5fnbYAB3qyAsmZr6uzkiyzscnb0zloE2zwmYaAV7tdJvLgBFfOfeJKtbOnOb5Axx1cKeLF00baaNr6Cq'
 
-JWT_AUTH = {
-    'JWT_EXPIRATION_DELTA': timedelta(minutes=60),
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
+
