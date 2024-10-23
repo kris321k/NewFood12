@@ -14,6 +14,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
 import stripe
+from django.shortcuts import render
+
+def home_view(request):
+    return render(request, 'food/index.html')  
 
 
 stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
